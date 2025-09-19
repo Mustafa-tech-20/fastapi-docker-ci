@@ -1,0 +1,40 @@
+name: CI - FastAPI Docker
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Set up Docker
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 3. Build Docker image
+      - name: Build Docker image
+        run: docker build -t fastapi-app .
+
+      # 4. Run container test
+      - name: Run container
+        run: docker run --rm -d -p 8000:8000 --name fastapi-app fastapi-app
+
+      # 5. Health check (curl localhost:8000)
+      - name: Test FastAPI endpoint
+        run: |
+          sleep 5  # wait for container startup
+          curl -f http://localhost:8000 || (docker logs fastapi-app && exit 1)
+
+      # 6. Stop container
+      - name: Stop container
+        run: docker stop fastapi-app
+
+
